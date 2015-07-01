@@ -1,5 +1,4 @@
 require 'parallel'
-require 'shellwords'
 
 desc "Run the full suite using parallel_tests to run on multiple cores"
 task :parallel_tests => ['parallel:setup_parallel_tests', 'parallel:spec', 'parallel:features', 'cucumber:class_reloading']
@@ -29,17 +28,12 @@ namespace :parallel do
       puts "parallel_tests is not set up. (Re)building spec/rails/rails-#{Rails::VERSION::STRING} App. Please wait."
       require 'rails/version'
       system("rm -Rf spec/rails/rails-#{Rails::VERSION::STRING}")
-      Rake::Task['setup'].invoke true
+      Rake::Task['setup'].invoke
     end
   end
 
   def run_in_parallel(command)
-    bash("ENV['TEST_ENV_NUMBER']=#{Parallel.processor_count} #{command}")
-  end
-
-  def bash(command)
-    escaped_command = Shellwords.escape(command)
-    system("bash -c #{escaped_command}")
+    system("ENV['TEST_ENV_NUMBER']=#{Parallel.processor_count} #{command}")
   end
 
   desc "Run the specs in parallel"

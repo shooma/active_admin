@@ -1,45 +1,55 @@
-def ensure_user_created(email)
-  user = AdminUser.where(email: email).first_or_create(password: 'password', password_confirmation: 'password')
-
-  unless user.persisted?
-    raise "Could not create user #{email}: #{user.errors.full_messages}"
+Given /^I am logged out$/ do
+  if page.all(:css, "a", :text => "Logout").size > 0
+    click_link "Logout"
   end
-  user
-end
-
-Given /^(?:I am logged|log) out$/ do
-  click_link 'Logout' if page.all(:css, "a", text: 'Logout').any?
 end
 
 Given /^I am logged in$/ do
-  step 'log out'
-  login_as ensure_user_created 'admin@example.com'
+  create_admin_user_and_logout_if_needed
+  user = AdminUser.find_by_email "admin@example.com"
+  login_as(user)
 end
 
 # only for @requires-reloading scenario
 Given /^I am logged in with capybara$/ do
-  ensure_user_created 'admin@example.com'
-  step 'log out'
+  create_admin_user_and_logout_if_needed
 
   visit new_admin_user_session_path
-  fill_in 'Email',    with: 'admin@example.com'
-  fill_in 'Password', with: 'password'
-  click_button 'Login'
+  fill_in "Email", :with => "admin@example.com"
+  fill_in "Password", :with => "password"
+  click_button "Login"
 end
 
-Given /^an admin user "([^"]*)" exists$/ do |email|
-  ensure_user_created(email)
+def create_admin_user_and_logout_if_needed
+  step 'an admin user "admin@example.com" exists'
+
+  if page.all(:css, "a", :text => "Logout").size > 0
+    click_link "Logout"
+  end
 end
 
-Given /^"([^"]*)" requests a password reset with token "([^"]*)"( but it expires)?$/ do |email, token, expired|
-  visit new_admin_user_password_path
-  fill_in 'Email', with: email
-  allow(Devise).to receive(:friendly_token).and_return(token)
-  click_button "Reset My Password"
+Given /^an admin user "([^"]*)" exists$/ do |admin_email|
+  user = AdminUser.find_or_create_by_email :email => admin_email,
+                                           :password => "password",
+                                           :password_confirmation => "password"
 
-  AdminUser.where(email: email).first.update_attribute :reset_password_sent_at, 1.month.ago if expired
+  unless user.persisted?
+    puts "Coult not create an admin user #{admin_email}: #{user.errors.full_messages}"
+    raise "Could not create an admin user"
+  end
 end
 
-When /^I fill in the password field with "([^"]*)"$/ do |password|
-  fill_in 'admin_user_password', with: password
+Given /^an admin user "([^"]*)" exists with (expired )?reset password token "(.*?)"$/ do |admin_email, expired, token|
+  user = AdminUser.find_or_create_by_email :email => admin_email,
+                                           :password => "password",
+                                           :password_confirmation => "password"
+
+  unless user.persisted?
+    puts "Coult not create an admin user #{admin_email}: #{user.errors.full_messages}"
+    raise "Could not create an admin user"
+  end
+
+  user.reset_password_token = token
+  user.reset_password_sent_at = 1.minute.ago unless expired
+  user.save
 end

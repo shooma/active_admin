@@ -1,21 +1,40 @@
 module ActiveAdmin
+
+  # Exception class to raise when there is an authorized access
+  # exception thrown. The exception has a few goodies that may 
+  # be useful for capturing / recognizing security issues.
+  class AccessDenied < StandardError
+    attr_reader :user, :action, :subject
+
+    def initialize(user, action, subject)
+      @user, @action, @subject = user, action, subject
+
+      super()
+    end
+
+    def message
+      I18n.t("active_admin.access_denied.message")
+    end
+  end
+
+
   class BaseController < ::InheritedResources::Base
     module Authorization
       include MethodOrProcHelper
       extend ActiveSupport::Concern
 
       ACTIONS_DICTIONARY = {
-        index:   ActiveAdmin::Authorization::READ,
-        show:    ActiveAdmin::Authorization::READ,
-        new:     ActiveAdmin::Authorization::CREATE,
-        create:  ActiveAdmin::Authorization::CREATE,
-        edit:    ActiveAdmin::Authorization::UPDATE,
-        update:  ActiveAdmin::Authorization::UPDATE,
-        destroy: ActiveAdmin::Authorization::DESTROY
+        :index   => ActiveAdmin::Authorization::READ,
+        :show    => ActiveAdmin::Authorization::READ,
+        :new     => ActiveAdmin::Authorization::CREATE,
+        :create  => ActiveAdmin::Authorization::CREATE,
+        :edit    => ActiveAdmin::Authorization::UPDATE,
+        :update  => ActiveAdmin::Authorization::UPDATE,
+        :destroy => ActiveAdmin::Authorization::DESTROY
       }
 
       included do
-        rescue_from ActiveAdmin::AccessDenied, with: :dispatch_active_admin_access_denied
+        rescue_from ActiveAdmin::AccessDenied, :with => :dispatch_active_admin_access_denied
 
         helper_method :authorized?
         helper_method :authorize!
@@ -24,7 +43,7 @@ module ActiveAdmin
       protected
 
       # Authorize the action and subject. Available in the controller
-      # as well as all the views.
+      # as well as all the views. 
       #
       # @param [Symbol] action The action to check if the user has permission
       #                 to perform on the subject.
@@ -32,7 +51,7 @@ module ActiveAdmin
       # @param [any] subject The subject that the user is trying to perform
       #                 the action on.
       #
-      # @return [Boolean]
+      # @returns [Boolean]
       #
       def authorized?(action, subject = nil)
         active_admin_authorization.authorized?(action, subject)
@@ -49,7 +68,7 @@ module ActiveAdmin
       # @param [any] subject The subject that the user is trying to perform
       #                 the action on.
       #
-      # @return [Boolean] True if authorized, otherwise raises
+      # @returns [Boolean] True if authorized, otherwise raises
       #                 an ActiveAdmin::AccessDenied.
       def authorize!(action, subject = nil)
         unless authorized? action, subject
@@ -69,21 +88,19 @@ module ActiveAdmin
 
       # Retrieve or instantiate the authorization instance for this resource
       #
-      # @return [ActiveAdmin::AuthorizationAdapter]
+      # @returns [ActiveAdmin::AuthorizationAdapter]
       def active_admin_authorization
-        @active_admin_authorization ||=
-         active_admin_authorization_adapter.new active_admin_config, current_active_admin_user
+        @active_admin_authorization ||= active_admin_authorization_adapter.new(active_admin_config, current_active_admin_user)
       end
 
       # Returns the class to be used as the authorization adapter
       #
-      # @return [Class]
+      # @returns [Class]
       def active_admin_authorization_adapter
-        adapter = active_admin_namespace.authorization_adapter
-        if adapter.is_a? String
-          ActiveSupport::Dependencies.constantize adapter
+        if active_admin_namespace.authorization_adapter.is_a?(String)
+          ActiveSupport::Dependencies.constantize(active_admin_namespace.authorization_adapter)
         else
-          adapter
+          active_admin_namespace.authorization_adapter
         end
       end
 
@@ -93,10 +110,16 @@ module ActiveAdmin
       #
       # @param [String, Symbol] action The controller action name.
       #
-      # @return [Symbol] The permission name to use.
+      # @returns [Symbol] The permission name to use.
       def action_to_permission(action)
-        if action && action = action.to_sym
-          Authorization::ACTIONS_DICTIONARY[action] || action
+        return nil unless action
+
+        action = action.to_sym
+
+        if Authorization::ACTIONS_DICTIONARY.has_key?(action)
+          Authorization::ACTIONS_DICTIONARY[action]
+        else
+          action
         end
       end
 
@@ -105,26 +128,23 @@ module ActiveAdmin
       end
 
       def rescue_active_admin_access_denied(exception)
-        error = exception.message
+        error_message = exception.message
 
         respond_to do |format|
           format.html do
-            flash[:error] = error
-            redirect_backwards_or_to_root
+            flash[:error] = error_message
+
+            if request.headers.keys.include?("HTTP_REFERER")
+              redirect_to :back
+            else
+              controller, action = active_admin_namespace.root_to.split("#")
+              redirect_to :controller => controller, :action => action
+            end
           end
 
-          format.csv  { render text:          error,           status: :unauthorized }
-          format.json { render json: { error: error },         status: :unauthorized }
-          format.xml  { render xml: "<error>#{error}</error>", status: :unauthorized }
-        end
-      end
-
-      def redirect_backwards_or_to_root
-        if request.headers.key? "HTTP_REFERER"
-          redirect_to :back
-        else
-          controller, action = active_admin_namespace.root_to.split '#'
-          redirect_to controller: controller, action: action
+          format.csv { render :text => error_message, :status => :unauthorized}
+          format.json { render :json => { :error => error_message }, :status => :unauthorized}
+          format.xml { render :xml => "<error>#{error_message}</error>", :status => :unauthorized}
         end
       end
 

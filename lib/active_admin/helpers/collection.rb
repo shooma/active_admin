@@ -1,16 +1,22 @@
 module ActiveAdmin
   module Helpers
     module Collection
-      # 1. removes `select` and `order` to prevent invalid SQL
-      # 2. correctly handles the Hash returned when `group by` is used
-      def collection_size(c = collection)
-        c = c.except :select, :order
+      # Works around this issue: https://github.com/rails/rails/issues/7121
+      #
+      # GROUP BY + COUNT drops SELECT statement. This leads to SQL error when
+      # the ORDER statement mentions a column defined in the SELECT statement.
+      #
+      # We remove the ORDER statement to work around this issue.
+      def collection_size(collection=collection)
+        size = collection.reorder("").count
+        # when GROUP BY is used, AR returns Hash instead of Fixnum for .size
+        size = size.size if size.kind_of?(Hash)
 
-        c.group_values.present? ? c.count.count : c.count
+        size
       end
 
-      def collection_is_empty?(c = collection)
-        collection_size(c) == 0
+      def collection_is_empty?(collection=collection)
+        collection_size(collection) == 0
       end
     end
   end

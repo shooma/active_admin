@@ -4,27 +4,20 @@ module ActiveAdmin
 
       # Returns an array of links to use in a breadcrumb
       def breadcrumb_links(path = request.path)
-        # remove leading "/" and split up the URL
-        # and remove last since it's used as the page title
-        parts = path.split('/').select(&:present?)[0..-2]
+        parts = path[1..-1].split('/')                        # remove leading "/" and split up URL path
+        parts.pop unless params[:action] =~ /^create|update$/ # remove last if not create/update
 
         parts.each_with_index.map do |part, index|
-          # 1. try using `display_name` if we can locate a DB object
-          # 2. try using the model name translation
-          # 3. default to calling `titlecase` on the URL fragment
-          if part =~ /\A(\d+|[a-f0-9]{24})\z/ && parts[index-1]
-            parent = active_admin_config.belongs_to_config.try :target
-            config = parent && parent.resource_name.route_key == parts[index-1] ? parent : active_admin_config
-            name   = display_name config.find_resource part
+          # If an object (users/23), look it up via ActiveRecord and capture its name.
+          # If name is nil, look up the model translation, using `titlecase` as the backup.
+          if part =~ /^\d|^[a-f0-9]{24}$/ && parent = parts[index-1]
+            klass = parent.singularize.camelcase.constantize rescue nil
+            obj   = klass.find_by_id(part) if klass
+            name  = display_name(obj)      if obj
           end
-          name ||= I18n.t "activerecord.models.#{part.singularize}", count: ::ActiveAdmin::Helpers::I18n::PLURAL_MANY_COUNT, default: part.titlecase
+          name ||= I18n.t "activerecord.models.#{part.singularize}", :count => 1.1, :default => part.titlecase
 
-          # Don't create a link if the resource's show action is disabled
-          if !config || config.defined_actions.include?(:show)
-            link_to name, '/' + parts[0..index].join('/')
-          else
-            name
-          end
+          link_to name, '/' + parts[0..index].join('/')
         end
       end
 

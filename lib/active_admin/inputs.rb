@@ -4,17 +4,12 @@ module ActiveAdmin
 
     autoload :DatepickerInput
 
-    module Filters
-      extend ActiveSupport::Autoload
-
-      autoload :Base
-      autoload :StringInput
-      autoload :DatePickerInput
-      autoload :DateRangeInput
-      autoload :NumericInput
-      autoload :SelectInput
-      autoload :CheckBoxesInput
-      autoload :BooleanInput
-    end
+    autoload :FilterBase
+    autoload :FilterStringInput
+    autoload :FilterDateRangeInput
+    autoload :FilterNumericInput
+    autoload :FilterSelectInput
+    autoload :FilterCheckBoxesInput
+    autoload :FilterBooleanInput
   end
 end

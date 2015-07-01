@@ -1,6 +1,6 @@
 module ActiveAdmin
   module Deprecation
-    module_function
+    extend self
 
     def warn(message, callstack = caller)
       ActiveSupport::Deprecation.warn "Active Admin: #{message}", callstack
@@ -23,12 +23,13 @@ module ActiveAdmin
     #     end
     #
     def deprecate(klass, method, message)
-      klass.send :define_method, "deprecated_#{method}", klass.instance_method(method)
-
-      klass.send :define_method, method do |*args|
-        ActiveAdmin::Deprecation.warn "#{message}", caller
-        send "deprecated_#{method}", *args
-      end
+      klass.class_eval <<-EOC, __FILE__, __LINE__
+        alias_method :"deprecated_#{method}", :#{method}
+        def #{method}(*args)
+          ActiveAdmin::Deprecation.warn('#{message}', caller)
+          send(:deprecated_#{method}, *args)
+        end
+      EOC
     end
 
   end

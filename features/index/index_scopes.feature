@@ -26,18 +26,6 @@ Feature: Index Scoping
     And I should see the scope "All" with the count 3
     And I should see 3 posts in the table
 
-  Scenario: Viewing resources with one scope that is set as not default
-    Given 3 posts exist
-    And an index configuration of:
-      """
-      ActiveAdmin.register Post do
-        scope :all, :default => proc{ false }
-      end
-      """
-    Then I should see the scope "All" not selected
-    And I should see the scope "All" with the count 3
-    And I should see 3 posts in the table
-
   Scenario: Viewing resources with a scope and no results
     Given 3 posts exist
     And an index configuration of:
@@ -47,7 +35,7 @@ Feature: Index Scoping
         filter :title
       end
       """
-    When I fill in "Title" with "Non Existing Post"
+    When I fill in "Search Title" with "Non Existing Post"
     And I press "Filter"
     Then I should see the scope "All" selected
 
@@ -122,7 +110,7 @@ Feature: Index Scoping
     And I should see the scope "Published" with the count 3
     And I should see 3 posts in the table
 
-    When I select "Daft Punk" from "Author"
+    When I select "daft_punk" from "Author"
     And I press "Filter"
 
     Then I should see the scope "Published" selected
@@ -177,7 +165,7 @@ Feature: Index Scoping
     Then I should see the scope "Tomorrow" selected
     And I should see the scope "Today" not selected
     And I should see a link to "Today"
-
+    
   Scenario: Viewing resources with scopes when scoping to user
     Given 2 posts written by "Daft Punk" exist
     And a post with the title "Monkey Wrench" written by "Foo Fighters" exists
@@ -199,7 +187,7 @@ Feature: Index Scoping
       """
     Then I should see the scope "All" selected
     And I should see the scope "All" with the count 2
-    When I fill in "Title" with "Monkey"
+    When I fill in "Search Title" with "Monkey"
     And I press "Filter"
     Then I should see the scope "All" selected
     And I should see the scope "All" with the count 1
@@ -242,7 +230,7 @@ Feature: Index Scoping
     And I should see the scope "Published" with the count 1
     And I should see 1 posts in the table
 
-    When I select "Daft Punk" from "Author"
+    When I select "daft_punk" from "Author"
     And I press "Filter"
 
     Then I should see the scope "Published" selected

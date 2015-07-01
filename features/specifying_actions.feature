@@ -23,7 +23,7 @@ Feature: Specifying Actions
     Given a configuration of:
       """
         ActiveAdmin.register Post do
-          action_item(:import, :only => :index) do
+          action_item(:only => :index) do
             link_to('Import Posts', import_admin_posts_path)
           end
 
@@ -43,10 +43,10 @@ Feature: Specifying Actions
     Given a configuration of:
       """
         ActiveAdmin.register Post do
-          action_item(:review, :only => :show) do
+          action_item(:only => :show) do
             link_to('Review', review_admin_post_path)
           end
-
+  
           member_action :review do
             @post = Post.find(params[:id])
           end
@@ -69,7 +69,7 @@ Feature: Specifying Actions
     Given a configuration of:
       """
         ActiveAdmin.register Post do
-          action_item(:review, :only => :show) do
+          action_item(:only => :show) do
             link_to('Review', review_admin_post_path)
           end
 

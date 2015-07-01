@@ -1,71 +1,65 @@
 module ActiveAdmin
   module Views
 
-    # # Index as Blog
+    # = Index as Blog
     #
     # Render your index page as a set of posts. The post has two main options:
     # title and body.
     #
-    # ```ruby
-    # index as: :blog do
-    #   title :my_title # Calls #my_title on each resource
-    #   body  :my_body  # Calls #my_body on each resource
-    # end
-    # ```
+    #     index :as => :blog do
+    #       title :my_title # Calls #my_title on each resource
+    #       body  :my_body  # Calls #my_body on each resource
+    #     end
     #
-    # ## Post Title
+    # == Post Title
     #
     # The title is the content that will be rendered within a link to the
     # resource. There are two main ways to set the content for the title
     #
-    # First, you can pass in a method to be called on your resource. For example:
+    # First, you can pass in a method to be called on your
+    # resource. For example:
     #
-    # ```ruby
-    # index as: :blog do
-    #   title :a_method_to_call
-    # end
-    # ```
+    #     index :as => :blog do
+    #       title :a_method_to_call
+    #     end
+    #
+    # This will result in the title of the post being the return value of
+    # Resource#a_method_to_call
     #
     # Second, you can pass a block to the tile option which will then be
     # used as the contents fo the title. The resource being rendered
     # is passed in to the block. For Example:
     #
-    # ```ruby
-    # index as: :blog do
-    #   title do |post|
-    #     span post.title,      class: 'title'
-    #     span post.created_at, class: 'created_at'
-    #   end
-    # end
-    # ```
+    #     index :as => :blog do
+    #       title do |post|
+    #         span post.title, :class => 'title'
+    #         span post.created_at, :class => 'created_at'
+    #       end
+    #     end
     #
-    # ## Post Body
+    # == Post Body
     #
     # The body is rendered underneath the title of each post. The same two
     # style of options work as the Post Title above.
     #
     # Call a method on the resource as the body:
     #
-    # ```ruby
-    # index as: :blog do
-    #   title :my_title
-    #   body :my_body
-    # end
-    # ```
+    #     index :as => :blog do
+    #       title :my_title
+    #       body :my_body # Return value of #my_body will be the body
+    #     end
     #
     # Or, render a block as the body:
     #
-    # ```ruby
-    # index as: :blog do
-    #   title :my_title
-    #   body do |post|
-    #     div truncate post.title
-    #     div class: 'meta' do
-    #       span "Post in #{post.categories.join(', ')}"
+    #     index :as => :blog do
+    #       title :my_title
+    #       body do |post|
+    #         div truncate(post.title)
+    #         div :class => 'meta' do
+    #           span "Post in #{post.categories.join(', ')}"
+    #         end
+    #       end
     #     end
-    #   end
-    # end
-    # ```
     #
     class IndexAsBlog < ActiveAdmin::Component
 
@@ -73,9 +67,9 @@ module ActiveAdmin
         @page_presenter = page_presenter
         @collection = collection
 
-        # Call the block passed in. This will set the
+        # Call the block passed in. This will set the 
         # title and body methods
-        instance_exec &page_presenter.block if page_presenter.block
+        instance_eval &page_presenter.block if page_presenter.block
 
         add_class "index"
         build_posts
@@ -113,7 +107,7 @@ module ActiveAdmin
       end
 
       def build_post(post)
-        div for: post do
+        div :for => post do
           resource_selection_cell(post) if active_admin_config.batch_actions.any?
           build_title(post)
           build_body(post)
@@ -123,9 +117,7 @@ module ActiveAdmin
       def build_title(post)
         if @title
           h3 do
-            a(href: resource_path(post)) do
-             render_method_on_post_or_call_proc post, @title
-            end
+            link_to(call_method_or_proc_on(post, @title), resource_path(post))
           end
         else
           h3 do
@@ -136,18 +128,7 @@ module ActiveAdmin
 
       def build_body(post)
         if @body
-          div class: 'content' do
-            render_method_on_post_or_call_proc post, @body
-          end
-        end
-      end
-
-      def render_method_on_post_or_call_proc(post, proc)
-        case proc
-        when String, Symbol
-          post.public_send proc
-        else
-          instance_exec post, &proc
+          div(call_method_or_proc_on(post, @body), :class => 'content')
         end
       end
 

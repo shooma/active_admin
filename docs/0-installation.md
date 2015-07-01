@@ -1,98 +1,52 @@
 # Installation
 
-Active Admin is a Ruby Gem.
+Installing Active Admin in a Rails application is as easy as adding the gem to
+your Gemfile:
 
-```ruby
-gem 'activeadmin'
+    # Gemfile
+    gem 'activeadmin'
 
-# Plus integrations with:
-gem 'devise'
-gem 'cancan' # or cancancan
-gem 'draper'
-gem 'pundit'
-```
+## Running the Generator
 
-More accurately, it's a [Rails Engine](http://guides.rubyonrails.org/engines.html)
-that can be injected into your existing Ruby on Rails application.
+Once you have added the gem to your Gemfile (and any other dependencies), you
+need to run the Active Admin install generator.
 
-## Setting up Active Admin
+    $> rails generate active_admin:install
 
-After installing the gem, you need to run the generator. By default we use Devise, and
-the generator creates an `AdminUser` model. If you want to create a different model
-(or modify an existing one for use with Devise) you can pass it as an argument.
-If you want to skip Devise configuration entirely, you can pass `--skip-users`.
+This will install Active Admin the default settings. By default it will create a
+new Devise user / model called AdminUser. To change the name of the user class,
+simply pass the class as the last argument:
 
-```sh
-rails g active_admin:install              # creates the AdminUser class
-rails g active_admin:install User         # creates / edits the class for use with Devise
-rails g active_admin:install --skip-users # skips Devise install
-```
+    $> rails generate active_admin:install User
 
-The generator adds these core files, among others:
+Instead of generating an AdminUser class, this command will create a User class.
 
-```
-app/admin/dashboard.rb
-app/assets/javascripts/active_admin.js.coffee
-app/assets/stylesheets/active_admin.css.scss
-config/initializers/active_admin.rb
-```
+You can skip the Devise user class all together by using the `skip-users` flag:
 
-Now, migrate your database and start the server:
+    $> rails generate active_admin:install --skip-users
 
-```sh
-rake db:migrate
-rails server
-```
+NOTE: If you don't use the default user settings, you will need to configure the
+settings in `config/intializers/active_admin.rb` to suite your needs.
 
-Visit `http://localhost:3000/admin` and log in as the default user:
+After running the installer, run `rake db:migrate` to ensure that all db tables
+are created.
 
-* __User__: admin@example.com
-* __Password__: password
+## Upgrading
 
-Voila! You're on your brand new Active Admin dashboard.
+To upgrade Active Admin, simply update the version number in your Gemfile, then
+run the assets generator:
 
-To register an existing model with Active Admin:
+    $> rails generate active_admin:assets
 
-```sh
-rails generate active_admin:resource MyModel
-```
+This command makes sure you have all the latest assets and your installation is
+up to date. Each time you upgrade Active Admin, you should run this command.
 
-This creates a file at `app/admin/my_model.rb` to set up the UI; refresh your browser to see it.
-
-# Upgrading
-
-When upgrading to a new version, it's a good idea to check the [CHANGELOG].
-
-To update the JS & CSS assets:
-
-```sh
-rails generate active_admin:assets
-```
-
-You should also sync these files with their counterparts in the AA source code:
-
-* app/admin/dashboard.rb [~>][dashboard.rb]
-* config/initializers/active_admin.rb [~>][active_admin.rb]
-
-# Gem compatibility
-
-## will_paginate
+## will_paginate compatibility
 
 If you use `will_paginate` in your app, you need to configure an initializer for
-Kaminari to avoid conflicts.
+Kaminari to avoid conflicts. Put this in `config/initializers/kaminari.rb`
 
-```ruby
-# config/initializers/kaminari.rb
-Kaminari.configure do |config|
-  config.page_method_name = :per_page_kaminari
-end
-```
 
-## simple_form
-
-If you're getting the error `wrong number of arguments (6 for 4..5)`, [read #2703].
-
-[CHANGELOG]: https://github.com/activeadmin/activeadmin/blob/master/CHANGELOG.md
-[dashboard.rb]: https://github.com/activeadmin/activeadmin/blob/master/lib/generators/active_admin/install/templates/dashboard.rb
-[active_admin.rb]: https://github.com/activeadmin/activeadmin/blob/master/lib/generators/active_admin/install/templates/active_admin.rb.erb
-[read #2703]: https://github.com/activeadmin/activeadmin/issues/2703#issuecomment-38140864
+    Kaminari.configure do |config|
+      config.page_method_name = :per_page_kaminari
+    end

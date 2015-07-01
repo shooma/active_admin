@@ -1,4 +1,4 @@
-require 'rails_helper'
+require 'spec_helper'
 
 describe ActiveAdmin::CanCanAdapter do
 
@@ -8,7 +8,7 @@ describe ActiveAdmin::CanCanAdapter do
     let(:namespace){ ActiveAdmin::Namespace.new(application, "Admin") }
     let(:resource){ namespace.register(Post) }
 
-    let :ability_class do
+    let :mock_ability_class do
       Class.new do
         include CanCan::Ability
 
@@ -20,22 +20,14 @@ describe ActiveAdmin::CanCanAdapter do
       end
     end
 
-    let(:auth) { namespace.authorization_adapter.new(resource, double) }
-
-    before do
-      namespace.authorization_adapter = ActiveAdmin::CanCanAdapter
-      namespace.cancan_ability_class = ability_class
-    end
-
     it "should initialize the ability stored in the namespace configuration" do
-      expect(auth.authorized?(:read, Post)).to eq true
-      expect(auth.authorized?(:update, Post)).to eq false
-    end
+      namespace.authorization_adapter = ActiveAdmin::CanCanAdapter
+      namespace.cancan_ability_class = mock_ability_class
 
-    it "should scope the collection with accessible_by" do
-      collection = double
-      expect(collection).to receive(:accessible_by).with(auth.cancan_ability, :edit)
-      auth.scope_collection(collection, :edit)
+      auth = namespace.authorization_adapter.new(resource, mock)
+
+      auth.authorized?(:read, Post).should == true
+      auth.authorized?(:update, Post).should == false
     end
 
   end

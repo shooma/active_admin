@@ -1,4 +1,4 @@
-require 'rails_helper'
+require 'spec_helper'
 
 class MockComponentClass < ActiveAdmin::Component; end
 
@@ -8,11 +8,11 @@ describe ActiveAdmin::Component do
   let(:component){ component_class.new }
 
   it "should be a subclass of an html div" do
-    expect(ActiveAdmin::Component.ancestors).to include(Arbre::HTML::Div)
+    ActiveAdmin::Component.ancestors.should include(Arbre::HTML::Div)
   end
 
   it "should render to a div, even as a subclass" do
-    expect(component.tag_name).to eq 'div'
+    component.tag_name.should == 'div'
   end
 
 end

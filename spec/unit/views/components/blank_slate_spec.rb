@@ -1,4 +1,4 @@
-require 'rails_helper'
+require 'spec_helper'
 
 describe ActiveAdmin::Views::BlankSlate do
 
@@ -9,19 +9,9 @@ describe ActiveAdmin::Views::BlankSlate do
       end
     end
 
-    describe '#tag_name' do
-      subject { super().tag_name }
-      it    { is_expected.to eql 'div' }
-    end
+    its(:tag_name)    { should eql 'div' }
+    its(:class_list)  { should include('blank_slate_container') }
 
-    describe '#class_list' do
-      subject { super().class_list }
-      it  { is_expected.to include('blank_slate_container') }
-    end
-
-    describe '#content' do
-      subject { super().content }
-      it     { is_expected.to include '<span class="blank_slate">There are no Posts yet. <a href="/posts/new">Create one</a></span>' }
-    end
+    its(:content)     { should include '<span class="blank_slate">There are no Posts yet. <a href="/posts/new">Create one</a></span>' }
   end
 end

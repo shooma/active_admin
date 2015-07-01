@@ -1,21 +1,14 @@
 desc "Creates a test rails app for the specs to run against"
-task :setup, :parallel do |t, args|
+task :setup do
   require 'rails/version'
-  if File.exists? dir = "spec/rails/rails-#{Rails::VERSION::STRING}"
-    puts "test app #{dir} already exists; skipping"
-  else
-    system("mkdir spec/rails") unless File.exists?("spec/rails")
-    system "#{'INSTALL_PARALLEL=yes' if args[:parallel]} bundle exec rails new #{dir} -m spec/support/rails_template.rb --skip-bundle"
-    Rake::Task['parallel:after_setup_hook'].invoke if args[:parallel]
-  end
+  system("mkdir spec/rails") unless File.exists?("spec/rails")
+  system "bundle exec rails new spec/rails/rails-#{Rails::VERSION::STRING} -m spec/support/rails_template.rb"
+  Rake::Task['parallel:after_setup_hook'].invoke
 end
 
+# Run specs and cukes
 desc "Run the full suite using 1 core"
-task test: ['spec:unit', 'spec:integration', 'cucumber', 'cucumber:class_reloading']
-
-require 'coveralls/rake/task'
-Coveralls::RakeTask.new
-task test_with_coveralls: [:test, 'coveralls:push']
+task :test => ['spec:unit', 'spec:integration', 'cucumber', 'cucumber:class_reloading']
 
 namespace :test do
 

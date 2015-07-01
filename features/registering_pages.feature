@@ -93,7 +93,7 @@ Feature: Registering Pages
     Given a configuration of:
     """
     ActiveAdmin.register_page "Status" do
-      action_item :visit do
+      action_item do
         link_to "Visit", "/"
       end
 

@@ -43,13 +43,13 @@ module ActiveAdmin
     #        one of the `ActiveAdmin::Auth::*` symbols.
     #
     # @param [any] subject The subject the action is being performed on usually this
-    #        is a model object. Note, that this is NOT always in instance, it can be
+    #        is a model object. Note, that this is NOT always in instance, it can be 
     #        the class of the subject also. For example, Active Admin uses the class
-    #        of the resource to decide if the resource should be displayed in the
+    #        of the resource to decide if the resource should be displayed in the 
     #        global navigation. To deal with this nicely in a case statement, take
     #        a look at `#normalized(klasss)`
     #
-    # @return [Boolean]
+    # @returns [Boolean]
     def authorized?(action, subject = nil)
       true
     end
@@ -62,13 +62,9 @@ module ActiveAdmin
     # @param [ActiveRecord::Relation] collection The collection the user is
     #        attempting to view.
     #
-    # @param [Symbol] action The name of the action to perform. Usually this will be
-    #        one of the `ActiveAdmin::Auth::*` symbols. Defaults to `Auth::READ` if
-    #        no action passed in.
-    #
-    # @return [ActiveRecord::Relation] A new collection, scoped to the
+    # @returns [ActiveRecord::Relation] A new collection, scoped to the 
     #          objects that the current user has access to.
-    def scope_collection(collection, action = Auth::READ)
+    def scope_collection(collection)
       collection
     end
 
@@ -76,7 +72,7 @@ module ActiveAdmin
 
     # The `#authorized?` method's subject can be set to both instances as well
     # as classes of objects. This can make it much difficult to create simple
-    # case statements for authorization since you have to handle both the
+    # case statements for authorization since you have to handle both the 
     # class level match and the instance level match.
     #
     # For example:

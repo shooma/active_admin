@@ -1,12 +1,13 @@
+require 'inherited_resources'
+
 require 'active_admin/base_controller/authorization'
 require 'active_admin/base_controller/menu'
 
 module ActiveAdmin
-  # BaseController for ActiveAdmin.
+  # BaseController for ActiveAdmin. 
   # It implements ActiveAdmin controllers core features.
   class BaseController < ::InheritedResources::Base
     helper ::ActiveAdmin::ViewHelpers
-    helper_method :env
 
     layout :determine_active_admin_layout
 
@@ -22,7 +23,7 @@ module ActiveAdmin
       attr_accessor :active_admin_config
     end
 
-    # By default Rails will render un-implemented actions when the view exists. Because Active
+    # By default Rails will render un-implemented actions when the view exists. Becuase Active
     # Admin allows you to not render any of the actions by using the #actions method, we need
     # to check if they are implemented.
     def only_render_implemented_actions
@@ -45,7 +46,7 @@ module ActiveAdmin
     helper_method :current_active_admin_user
 
     def current_active_admin_user?
-      !!current_active_admin_user
+      !current_active_admin_user.nil?
     end
     helper_method :current_active_admin_user?
 

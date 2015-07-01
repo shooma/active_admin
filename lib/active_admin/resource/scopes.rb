@@ -13,14 +13,8 @@ module ActiveAdmin
         scopes.find{|s| s.id == id }
       end
 
-      def default_scope(context = nil)
-        scopes.detect do |scope|
-          if scope.default_block.is_a?(Proc)
-            render_in_context(context, scope.default_block)
-          else
-            scope.default_block
-          end
-        end
+      def default_scope
+        @default_scope
       end
 
       # Create a new scope object for this resource.
@@ -41,6 +35,8 @@ module ActiveAdmin
         else
           self.scopes << scope
         end
+
+        @default_scope = scope if options[:default]
 
         scope
       end

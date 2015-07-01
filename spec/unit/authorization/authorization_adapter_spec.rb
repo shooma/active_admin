@@ -1,13 +1,13 @@
-require 'rails_helper'
+require 'spec_helper'
 
 describe ActiveAdmin::AuthorizationAdapter do
 
-  let(:adapter) { ActiveAdmin::AuthorizationAdapter.new(double, double) }
+  let(:adapter) { ActiveAdmin::AuthorizationAdapter.new(stub, stub) }
 
   describe "#authorized?" do
 
     it "should always return true" do
-      expect(adapter.authorized?(:read, "Resource")).to be_truthy
+      adapter.authorized?(:read, "Resource").should == true
     end
 
   end
@@ -15,8 +15,8 @@ describe ActiveAdmin::AuthorizationAdapter do
   describe "#scope_collection" do
 
     it "should return the collection unscoped" do
-      collection = double
-      expect(adapter.scope_collection(collection, ActiveAdmin::Auth::READ)).to eq collection
+      collection = stub
+      adapter.scope_collection(collection).should == collection
     end
 
   end
@@ -24,7 +24,7 @@ describe ActiveAdmin::AuthorizationAdapter do
   describe "using #normalized in a subclass" do
 
     let(:auth_class) do
-      Class.new(ActiveAdmin::AuthorizationAdapter) do
+      Class.new(ActiveAdmin::AuthorizationAdapter) do 
 
         def authorized?(action, subject = nil)
           case subject
@@ -38,22 +38,22 @@ describe ActiveAdmin::AuthorizationAdapter do
       end
     end
 
-    let(:adapter) { auth_class.new(double, double) }
+    let(:adapter) { auth_class.new(stub, stub) }
 
-    it "should match against a class" do
-      expect(adapter.authorized?(:read, String)).to be_truthy
+    it "should match agains a class" do
+      adapter.authorized?(:read, String).should == true
     end
 
     it 'should match against an instance' do
-      expect(adapter.authorized?(:read, "String")).to be_truthy
+      adapter.authorized?(:read, "String").should == true
     end
 
     it 'should not match a different class' do
-      expect(adapter.authorized?(:read, Hash)).to be_falsey
+      adapter.authorized?(:read, Hash).should == false
     end
 
     it 'should not match a different instance' do
-      expect(adapter.authorized?(:read, {})).to be_falsey
+      adapter.authorized?(:read, {}).should == false
     end
 
   end

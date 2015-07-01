@@ -1,16 +1,9 @@
 module ActiveAdmin
-  class Engine < ::Rails::Engine
-    initializer "active_admin.precompile", group: :all do |app|
-      ActiveAdmin.application.stylesheets.each do |path, _|
-        app.config.assets.precompile << path
+  class Engine < Rails::Engine
+    if Rails.version > "3.1"
+      initializer "ActiveAdmin precompile hook", :group => :all do |app|
+        app.config.assets.precompile += %w(active_admin.js active_admin.css active_admin/print.css)
       end
-      ActiveAdmin.application.javascripts.each do |path|
-        app.config.assets.precompile << path
-      end
-    end
-
-    initializer 'active_admin.routes' do
-      require 'active_admin/helpers/routes/url_helpers'
     end
   end
 end

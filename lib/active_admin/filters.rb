@@ -1,6 +1,5 @@
 require 'active_admin/filters/dsl'
-require 'active_admin/filters/resource_extension'
-require 'active_admin/filters/formtastic_addons'
+require "active_admin/filters/resource_extension"
 require 'active_admin/filters/forms'
 
 # Add our Extensions

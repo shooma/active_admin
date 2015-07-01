@@ -1,41 +1,34 @@
-require 'rails_helper'
+require 'spec_helper' 
 
-describe ActiveAdmin::Application do
+describe ActiveAdmin, "filters" do
   let(:application){ ActiveAdmin::Application.new }
-  let(:controllers){ application.controllers_for_filters }
 
-  it 'controllers_for_filters' do
-    expect(application.controllers_for_filters).to eq [
-      ActiveAdmin::BaseController, ActiveAdmin::Devise::SessionsController,
-      ActiveAdmin::Devise::PasswordsController, ActiveAdmin::Devise::UnlocksController,
-      ActiveAdmin::Devise::RegistrationsController, ActiveAdmin::Devise::ConfirmationsController
-    ]
-  end
-
-  expected_actions = (
-    prefixes = %w(skip append prepend) << nil
-    positions = %w(before around after)
-    suffixes = %w(filter)
-    base = %w(skip_filter)
-    if Rails::VERSION::MAJOR >= 4
-      suffixes += %w(action)
-      base += %w(skip_action_callback)
-    end
-
-    prefixes.each_with_object(base) do |prefix, stack|
-      positions.each do |position|
-        suffixes.each do |suffix|
-          stack << [prefix, position, suffix].compact.join("_").to_sym
-        end
-      end
-    end
-  )
-
-  expected_actions.each do |action|
-    it action do
-      args = [:my_filter, { only: :show }]
-      controllers.each { |c| expect(c).to receive(action).with(args) }
-      application.public_send action, args
+  describe "before filters" do
+    it "should add a new before filter to ActiveAdmin::BaseController" do
+      ActiveAdmin::BaseController.should_receive(:before_filter).and_return(true)
+      application.before_filter :my_filter, :only => :show
     end
   end
+  
+  describe "skip before filters" do
+    it "should add a new skip before filter to ActiveAdmin::BaseController" do
+      ActiveAdmin::BaseController.should_receive(:skip_before_filter).and_return(true)
+      application.skip_before_filter :my_filter, :only => :show
+    end
+  end
+
+  describe "after filters" do
+    it "should add a new after filter to ActiveAdmin::BaseController" do
+      ActiveAdmin::BaseController.should_receive(:after_filter).and_return(true)
+      application.after_filter :my_filter, :only => :show
+    end
+  end
+
+  describe "around filters" do
+    it "should add a new around filter to ActiveAdmin::BaseController" do
+      ActiveAdmin::BaseController.should_receive(:around_filter).and_return(true)
+      application.around_filter :my_filter, :only => :show
+    end
+  end
+
 end

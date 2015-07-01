@@ -1,56 +1,47 @@
-source 'https://rubygems.org'
+source 'http://rubygems.org'
 
 gemspec
 
-require File.expand_path 'spec/support/detect_rails_version', File.dirname(__FILE__)
+ACTIVE_ADMIN_PATH = File.dirname(__FILE__) unless defined?(ACTIVE_ADMIN_PATH)
+
+require File.expand_path('spec/support/detect_rails_version', ACTIVE_ADMIN_PATH)
 
 rails_version = detect_rails_version
 gem 'rails', rails_version
+gem 'bourbon'
 
-gem 'execjs', '~> 2.4.0' # ~> 2.5.0 works only for Ruby > 2.0
+case rails_version
+when /^3\.0/
+  # Do nothing, bundler should figure it out
+when /^3\.(1|2)/
+  # These are the gems you have to have for Rails 3.1 to be happy
+  gem 'sass-rails'
+  gem 'uglifier'
+else
+  raise "Rails #{rails_version} is not supported yet"
+end
 
-# Optional dependencies
-gem 'cancan'
-gem 'devise'
-gem 'draper'
-gem 'pundit'
-
-# Utility gems used in both development & test environments
-gem 'rake', require: false
-gem 'parallel_tests'
-
-# Debugging
-gem 'pry'                  # Easily debug from your console with `binding.pry`
-
-group :development do
-  # Debugging
-  gem 'better_errors'      # Web UI to debug exceptions. Go to /__better_errors to access the latest one
-  gem 'binding_of_caller'  # Retrieve the binding of a method's caller in MRI Ruby >= 1.9.2
-
-  # Performance
-  gem 'rack-mini-profiler' # Inline app profiler. See ?pp=help for options.
-  gem 'flamegraph'         # Flamegraph visualiztion: ?pp=flamegraph
-
-  # Documentation
-  gem 'yard'               # Documentation generator
-  gem 'redcarpet'          # Markdown implementation (for yard)
+group :development, :test do
+  gem 'haml', '~> 3.1.7',  :require => false
+  gem 'rake', '~> 10.0.2', :require => false
+  gem 'rails-i18n' # Provides default i18n for many languages
+  gem 'rdiscount'  # Markdown implementation (for yard)
+  gem 'sprockets'
+  gem 'yard'
 end
 
 group :test do
-  gem 'capybara'
-  gem 'simplecov', require: false # Test coverage generator. Go to /coverage/ after running tests
-  gem 'coveralls', require: false # Test coverage website. Go to https://coveralls.io
-  gem 'cucumber-rails', require: false
+  gem 'cancan'
+  gem 'capybara',        '1.1.2'
+  gem 'cucumber-rails',  '1.3.0', :require => false
   gem 'database_cleaner'
+  gem 'guard-coffeescript'
   gem 'guard-rspec'
   gem 'jasmine'
-  gem 'jslint_on_rails'
+  gem 'jslint_on_rails', '~> 1.1.1'
   gem 'launchy'
-  gem 'rails-i18n' # Provides default i18n for many languages
-  gem 'rspec'
-  gem 'rspec-rails', '~> 3.1.0'
-  gem 'i18n-spec'
-  gem 'shoulda-matchers'
+  gem 'parallel_tests'
+  gem 'rspec-rails',     '~> 2.9.0'
+  gem 'shoulda-matchers', '1.5.0' # See active_admin#2004
   gem 'sqlite3'
-  gem 'poltergeist'
 end

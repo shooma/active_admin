@@ -6,8 +6,6 @@ require 'active_admin/resource/pagination'
 require 'active_admin/resource/routes'
 require 'active_admin/resource/naming'
 require 'active_admin/resource/scopes'
-require 'active_admin/resource/includes'
-require 'active_admin/resource/scope_to'
 require 'active_admin/resource/sidebars'
 require 'active_admin/resource/belongs_to'
 
@@ -39,16 +37,19 @@ module ActiveAdmin
     attr_reader :collection_actions
 
     # The default sort order to use in the controller
-    attr_writer :sort_order
-    def sort_order
-      @sort_order ||= (resource_class.respond_to?(:primary_key) ? resource_class.primary_key.to_s : 'id') + '_desc'
-    end
+    attr_accessor :sort_order
+
+    # Scope this resource to an association in the controller
+    attr_accessor :scope_to
+
+    # If we're scoping resources, use this method on the parent to return the collection
+    attr_accessor :scope_to_association_method
 
     # Set the configuration for the CSV
     attr_writer :csv_builder
-
+    
     # Set breadcrumb builder
-    attr_writer :breadcrumb
+    attr_accessor :breadcrumb
 
     # Store a reference to the DSL so that we can dereference it during garbage collection.
     attr_accessor :dsl
@@ -61,13 +62,11 @@ module ActiveAdmin
       def initialize(namespace, resource_class, options = {})
         @namespace = namespace
         @resource_class_name = "::#{resource_class.name}"
-        @options    = options
-        @sort_order = options[:sort_order]
+        @options = default_options.merge(options)
+        @sort_order = @options[:sort_order]
         @member_actions, @collection_actions = [], []
       end
     end
-
-    include MethodOrProcHelper
 
     include Base
     include ActionItems
@@ -78,9 +77,8 @@ module ActiveAdmin
     include PagePresenters
     include Pagination
     include Scopes
-    include Includes
-    include ScopeTo
     include Sidebars
+    include Menu
     include Routes
 
     # The class this resource wraps. If you register the Post model, Resource#resource_class
@@ -105,6 +103,11 @@ module ActiveAdmin
       resource_class.connection.quote_column_name(column)
     end
 
+    # Returns the named route for an instance of this resource
+    def route_instance_path
+      [route_prefix, controller.resources_configuration[:self][:route_instance_name], 'path'].compact.join('_').to_sym
+    end
+
     # Clears all the member actions this resource knows about
     def clear_member_actions!
       @member_actions = []
@@ -116,22 +119,27 @@ module ActiveAdmin
 
     # Return only defined resource actions
     def defined_actions
-      controller.instance_methods.map(&:to_sym) & ResourceController::ACTIVE_ADMIN_ACTIONS
+      controller.instance_methods.map { |m| m.to_sym } & ResourceController::ACTIVE_ADMIN_ACTIONS
+    end
+
+    # Are admin notes turned on for this resource
+    def admin_notes?
+      admin_notes.nil? ? ActiveAdmin.admin_notes : admin_notes
     end
 
     def belongs_to(target, options = {})
       @belongs_to = Resource::BelongsTo.new(self, target, options)
-      self.navigation_menu_name = target unless @belongs_to.optional?
-      controller.send :belongs_to, target, options.dup
+      self.menu_item_menu_name = target unless @belongs_to.optional?
+      controller.belongs_to(target, options.dup)
     end
 
     def belongs_to_config
       @belongs_to
     end
 
-    # Do we belong to another resource?
+    # Do we belong to another resource
     def belongs_to?
-      !!belongs_to_config
+      !belongs_to_config.nil?
     end
 
     # The csv builder for this resource
@@ -139,25 +147,19 @@ module ActiveAdmin
       @csv_builder || default_csv_builder
     end
 
-    def breadcrumb
-      instance_variable_defined?(:@breadcrumb) ? @breadcrumb : namespace.breadcrumb
+    # @deprecated
+    def resource
+      resource_class
     end
-
-    def find_resource(id)
-      resource = resource_class.public_send *method_for_find(id)
-      decorator_class ? decorator_class.new(resource) : resource
-    end
+    ActiveAdmin::Deprecation.deprecate self, :resource,
+      "ActiveAdmin::Resource#resource is deprecated. Please use #resource_class instead."
 
     private
 
-    def method_for_find(id)
-      if finder = resources_configuration[:self][:finder]
-        [finder, id]
-      elsif Rails::VERSION::MAJOR >= 4
-        [:find_by, { resource_class.primary_key => id }]
-      else
-        [:"find_by_#{resource_class.primary_key}", id]
-      end
+    def default_options
+      {
+        :sort_order => "#{resource_class.respond_to?(:primary_key) ? resource_class.primary_key : 'id'}_desc"
+      }
     end
 
     def default_csv_builder

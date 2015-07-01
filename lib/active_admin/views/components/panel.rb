@@ -5,10 +5,12 @@ module ActiveAdmin
       builder_method :panel
 
       def build(title, attributes = {})
+        icon_name = attributes.delete(:icon)
+        icn = icon_name ? icon(icon_name) : ""
         super(attributes)
         add_class "panel"
-        @title = h3(title.to_s)
-        @contents = div(class: "panel_contents")
+        @title = h3(icn + title.to_s)
+        @contents = div(:class => "panel_contents")
       end
 
       def add_child(child)
@@ -26,13 +28,7 @@ module ActiveAdmin
         @contents.children?
       end
 
-      def header_action(*args)
-        action = args[0]
-
-        @title << div(class: 'header_action') do
-          action
-        end
-      end
     end
+
   end
 end

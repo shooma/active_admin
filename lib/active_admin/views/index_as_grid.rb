@@ -1,29 +1,25 @@
 module ActiveAdmin
   module Views
 
-     # # Index as a Grid
+     # = Index as a Grid
      #
      # Sometimes you want to display the index screen for a set of resources as a grid
      # (possibly a grid of thumbnail images). To do so, use the :grid option for the
      # index block.
      #
-     # ```ruby
-     # index as: :grid do |product|
-     #   link_to image_tag(product.image_path), admin_product_path(product)
-     # end
-     # ```
+     #     index :as => :grid do |product|
+     #       link_to(image_tag(product.image_path), admin_products_path(product))
+     #     end
      #
      # The block is rendered within a cell in the grid once for each resource in the
      # collection. The resource is passed into the block for you to use in the view.
      #
-     # You can customize the number of columns that are rendered using the columns
+     # You can customize the number of colums that are rendered using the columns
      # option:
      #
-     # ```ruby
-     # index as: :grid, columns: 5 do |product|
-     #   link_to image_tag(product.image_path), admin_product_path(product)
-     # end
-     # ```
+     #     index :as => :grid, :columns => 5 do |product|
+     #       link_to(image_tag(product.image_path), admin_products_path(product))
+     #     end
      #
      class IndexAsGrid < ActiveAdmin::Component
 
@@ -46,7 +42,7 @@ module ActiveAdmin
 
       def build_table
         resource_selection_toggle_panel if active_admin_config.batch_actions.any?
-        table class: "index_grid" do
+        table :class => "index_grid" do
           collection.in_groups_of(number_of_columns).each do |group|
             build_row(group)
           end
@@ -62,7 +58,7 @@ module ActiveAdmin
       end
 
       def build_item(item)
-        td for: item do
+        td :for => item do
           instance_exec(item, &@page_presenter.block)
         end
       end

@@ -15,14 +15,14 @@ module ActiveAdmin
     # Register a new view key with the view factory
     #
     # eg:
-    #
+    #   
     #   factory = AbstractViewFactory.new
-    #   factory.register my_view: SomeViewClass
+    #   factory.register :my_view => SomeViewClass
     #
     # You can setup many at the same time:
     #
-    #   factory.register  my_view: SomeClass,
-    #                     another_view: OtherViewClass
+    #   factory.register  :my_view => SomeClass,
+    #                     :another_view => OtherViewClass
     #
     def register(view_hash)
       view_hash.each do |view_key, view_class|
@@ -46,7 +46,8 @@ module ActiveAdmin
       set_view_for_key(key, value)
     end
 
-    def respond_to_missing?(method, include_private)
+    # Override respond to to include keys
+    def respond_to?(method)
       key = key_from_method_name(method)
       if has_key?(key)
         true
@@ -61,17 +62,26 @@ module ActiveAdmin
       key = key_from_method_name(method)
       if has_key?(key)
         if method.to_s.include?('=')
-          set_view_for_key key, args.first
+          self.class_eval <<-EOS
+            def #{key}=(value)
+              set_view_for_key(:#{key}, value)
+            end
+          EOS
         else
-          get_view_for_key key
+          self.class_eval <<-EOS
+            def #{key}
+              get_view_for_key(:#{key})
+            end
+          EOS
         end
+        self.send(method, *args)
       else
         super
       end
     end
 
     def key_from_method_name(method)
-      method.to_s.tr('=', '').to_sym
+      method.to_s.gsub('=', '').to_sym
     end
 
     def get_view_for_key(key)

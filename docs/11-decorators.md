@@ -1,55 +1,50 @@
 # Decorators
 
-Active Admin allows you to use the decorator pattern to provide view-specific
-versions of a resource. [Draper](https://github.com/drapergem/draper) is
-recommended but not required.
+Active Admin supports the use of decorators for resources. Resources will be
+be decorated for the index and show blocks. The
+[draper](https://github.com/drapergem/draper) gem is recommended but not required 
+(more on requirements below). Note, that Active Admin works out of the box with
+Draper `>= 1.0.0`.
 
-To use decorator support without Draper, your decorator must support a variety
-of collection methods to support pagination, filtering, etc. See
-[this github issue discussion](https://github.com/activeadmin/activeadmin/issues/3600)
-and [this gem](https://github.com/kiote/activeadmin-poro-decorator) for more details.
+## Configuration
 
-## Example usage
+    ActiveAdmin.register Post do
+      decorate_with PostDecorator
+    end
 
-```ruby
-# app/models/post.rb
-class Post < ActiveRecord::Base
-  # has title, content, and image_url
-end
+## Example Usage
 
-# app/decorators/post_decorator.rb
-class PostDecorator < Draper::Decorator
-  delegate_all
+This example uses [draper](https://github.com/drapergem/draper).
 
-  def image
-    h.image_tag model.image_url
-  end
-end
+    # Gemfile
+    gem 'draper', '>= 1.0.0'
 
-# app/admin/post.rb
-ActiveAdmin.register Post do
-  decorate_with PostDecorator
+Assuming a post and a post decorator
 
-  index do
-    column :title
-    column :image
-    actions
-  end
-end
-```
+    class Post < ActiveRecord::Base; end
 
-## Forms
+    class PostDecorator < ApplicationDecorator
+      decorates :post
 
-By default, ActiveAdmin does *not* decorate the resource used to render forms.
-If you need ActiveAdmin to decorate the forms, you can pass `decorate: true` to the
-form block.
+      def image
+        h.image_tag model.image_url
+      end
+    end
 
-```ruby
-ActiveAdmin.register Post do
-  decorate_with PostDecorator
+Then the following is possible
 
-  form decorate: true do |f|
-    # ...
-  end
-end
-```
+    ActiveAdmin.register Post do
+      decorate_with PostDecorator
+
+      index do
+        column(:title)
+        column(:image)
+      end
+
+      show do
+        attributes_table do
+          row(:title)
+          row(:image)
+        end
+      end
+    end

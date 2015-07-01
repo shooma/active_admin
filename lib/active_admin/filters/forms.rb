@@ -1,44 +1,61 @@
 module ActiveAdmin
   module Filters
+
     # This form builder defines methods to build filter forms such
     # as the one found in the sidebar of the index page of a standard resource.
     class FormBuilder < ::ActiveAdmin::FormBuilder
-      include ::ActiveAdmin::Filters::FormtasticAddons
-      self.input_namespaces = [::Object, ::ActiveAdmin::Inputs::Filters, ::ActiveAdmin::Inputs, ::Formtastic::Inputs]
-
-      # TODO: remove input class finders after formtastic 4 (where it will be default)
-      self.input_class_finder = ::Formtastic::InputClassFinder
 
       def filter(method, options = {})
-        if method.present? && options[:as] ||= default_input_type(method)
-          template.concat input(method, options)
-        end
+        return "" if method.blank? ||
+                     (options[:as] ||= default_input_type(method)).nil?
+        content = input(method, options)
+        form_buffers.last << content.html_safe if content
       end
 
       protected
 
-      # Returns the default filter type for a given attribute. If you want
-      # to use a custom search method, you have to specify the type yourself.
+      # Returns the default filter type for a given attribute
       def default_input_type(method, options = {})
-        if method =~ /_(eq|equals|cont|contains|start|starts_with|end|ends_with)\z/
-          :string
-        elsif klass._ransackers.key?(method.to_s)
-          klass._ransackers[method.to_s].type
-        elsif reflection_for(method) || polymorphic_foreign_type?(method)
-          :select
-        elsif column = column_for(method)
+        if (column = column_for(method))
           case column.type
           when :date, :datetime
-            :date_range
+            return :date_range
           when :string, :text
-            :string
-          when :integer, :float, :decimal
-            :numeric
+            return :string
+          when :integer
+            return :select if reflection_for(method.to_s.gsub('_id','').to_sym)
+            return :numeric
+          when :float, :decimal
+            return :numeric
           when :boolean
-            :boolean
+            return :boolean
           end
         end
+
+        if (reflection = reflection_for(method))
+          return :select if reflection.macro == :belongs_to && !reflection.options[:polymorphic]
+        end
       end
+
+      def custom_input_class_name(as)
+        "Filter#{as.to_s.camelize}Input"
+      end
+
+      def active_admin_input_class_name(as)
+        "ActiveAdmin::Inputs::Filter#{as.to_s.camelize}Input"
+      end
+
+      # Returns the column for an attribute on the object being searched
+      # if it exists. Otherwise returns nil
+      def column_for(method)
+        @object.base.columns_hash[method.to_s] if @object.base.respond_to?(:columns_hash)
+      end
+
+      # Returns the association reflection for the method if it exists
+      def reflection_for(method)
+        @object.base.reflect_on_association(method) if @object.base.respond_to?(:reflect_on_association)
+      end
+
     end
 
 
@@ -47,36 +64,33 @@ module ActiveAdmin
 
       # Helper method to render a filter form
       def active_admin_filters_form_for(search, filters, options = {})
-        defaults = { builder: ActiveAdmin::Filters::FormBuilder,
-                     url: collection_path,
-                     html: {class: 'filter_form'} }
-        required = { html: {method: :get},
-                     as: :q }
-        options  = defaults.deep_merge(options).deep_merge(required)
-
+        options[:builder] ||= ActiveAdmin::Filters::FormBuilder
+        options[:url] ||= collection_path
+        options[:html] ||= {}
+        options[:html][:method] = :get
+        options[:html][:class] ||= "filter_form"
+        options[:as] = :q
+        clear_link = link_to(I18n.t('active_admin.clear_filters'), "#", :class => "clear_filters_btn")
         form_for search, options do |f|
-          filters.each do |attribute, opts|
-            next if opts.key?(:if)     && !call_method_or_proc_on(self, opts[:if])
-            next if opts.key?(:unless) &&  call_method_or_proc_on(self, opts[:unless])
-
-            f.filter attribute, opts.except(:if, :unless)
+          filters.group_by{ |o| o[:attribute] }.each do |attribute, array|
+            options      = array.last # grab last-defined `filter` call from DSL
+            if_block     = options[:if]     || proc{ true }
+            unless_block = options[:unless] || proc{ false }
+            if call_method_or_proc_on(self, if_block) && !call_method_or_proc_on(self, unless_block)
+              f.filter options[:attribute], options.except(:attribute, :if, :unless)
+            end
           end
 
-          buttons = content_tag :div, class: "buttons" do
-            f.submit(I18n.t('active_admin.filters.buttons.filter')) +
-              link_to(I18n.t('active_admin.filters.buttons.clear'), '#', class: 'clear_filters_btn') +
-              hidden_field_tags_for(params, except: except_hidden_fields)
+          buttons = content_tag :div, :class => "buttons" do
+            f.submit(I18n.t('active_admin.filter')) +
+              clear_link +
+              hidden_field_tags_for(params, :except => [:q, :page])
           end
 
-          f.template.concat buttons
+          f.form_buffers.last + buttons
         end
       end
 
-      private
-
-      def except_hidden_fields
-        [:q, :page]
-      end
     end
 
   end
